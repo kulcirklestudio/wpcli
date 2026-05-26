@@ -252,7 +252,7 @@
                                 </p>
                                 <p>
                                     <label>
-                                        <input name="create_backup_branch" type="checkbox" value="1" checked>
+                                        <input name="create_backup_branch" type="checkbox" value="1">
                                         <?php esc_html_e('Create a backup branch before deleting', 'wordpress-git-connector'); ?>
                                     </label>
                                 </p>
@@ -268,7 +268,7 @@
                                         <?php esc_html_e('Create a downloadable local backup file before deleting', 'wordpress-git-connector'); ?>
                                     </label>
                                 </p>
-                                <p class="description"><?php esc_html_e('The active branch cannot be deleted. If backup is enabled, a branch named backup/<branch>-YYYYmmdd-HHMMSS will be created first.', 'wordpress-git-connector'); ?></p>
+                                <p class="description"><?php esc_html_e('The active branch cannot be deleted. A downloadable backup file is created by default. Enable backup branch only if you want Git to keep another local branch copy.', 'wordpress-git-connector'); ?></p>
                                 <?php $this->render_submit_button(__('Delete Branch', 'wordpress-git-connector'), [
                                     'class' => 'delete',
                                     'disabled' => !$uiState['has_deletable_branch'],

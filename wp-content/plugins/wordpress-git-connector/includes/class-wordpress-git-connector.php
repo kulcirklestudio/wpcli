@@ -336,6 +336,9 @@ final class WordPress_Git_Connector
             if ($disabledBranch !== '' && $branch === $disabledBranch) {
                 continue;
             }
+            if ($this->is_backup_branch($branch)) {
+                continue;
+            }
             ?>
             <option value="<?php echo esc_attr($branch); ?>" <?php selected($selected, $branch); ?>>
                 <?php echo esc_html($branch === $mainBranch ? $branch . ' (main branch)' : $branch); ?>
@@ -1600,6 +1603,11 @@ final class WordPress_Git_Connector
         ];
 
         return $labels[$action] ?? __('Git Action', 'wordpress-git-connector');
+    }
+
+    private function is_backup_branch(string $branch): bool
+    {
+        return strpos($branch, 'backup/') === 0;
     }
 
     private function build_activity_meta(array $settings): string
