@@ -97,12 +97,33 @@ final class WordPress_Git_Connector
                 $settings['git_binary'] = $detectedGit;
             }
         }
-        update_option(self::OPTION_KEY, array_merge($this->default_settings(), $settings));
+        $savedSettings = array_merge($this->default_settings(), $settings);
+        update_option(self::OPTION_KEY, $savedSettings);
         $this->record_activity('save_settings', [
             'success' => true,
             'message' => __('Settings saved.', 'wordpress-git-connector'),
             'output' => '',
-        ], $settings);
+        ], $savedSettings);
+
+        $syncResult = $this->sync_remote_branches_after_settings_save($savedSettings);
+        if ($syncResult !== null) {
+            $this->record_activity('sync_remote_branches', $syncResult, $savedSettings);
+            if (!empty($syncResult['success'])) {
+                $this->set_notice(
+                    'success',
+                    __('Settings saved and remote branches imported.', 'wordpress-git-connector'),
+                    $syncResult['output'] ?? ''
+                );
+                $this->redirect_back();
+            }
+
+            $this->set_notice(
+                'warning',
+                __('Settings saved, but remote branches could not be imported automatically.', 'wordpress-git-connector'),
+                trim(($syncResult['message'] ?? '') . PHP_EOL . ($syncResult['output'] ?? ''))
+            );
+            $this->redirect_back();
+        }
 
         $this->set_notice('success', __('Settings saved.', 'wordpress-git-connector'));
         $this->redirect_back();
@@ -921,7 +942,7 @@ final class WordPress_Git_Connector
                 continue;
             }
 
-            $existsResult = $this->run_git('show-ref --verify --quiet refs/heads/' . escapeshellarg($branchName), $settings);
+            $existsResult = $this->run_git('show-ref --verify --quiet ' . escapeshellarg('refs/heads/' . $branchName), $settings);
             if (!empty($existsResult['success'])) {
                 continue;
             }
@@ -945,6 +966,21 @@ final class WordPress_Git_Connector
                 ? 'Created local tracking branches: ' . implode(', ', $created)
                 : 'All remote branches were already available locally.',
         ];
+    }
+
+    private function sync_remote_branches_after_settings_save(array $settings): ?array
+    {
+        $repoPath = trim((string) ($settings['local_path'] ?? ''));
+        if ($repoPath === '' || !is_dir($repoPath . DIRECTORY_SEPARATOR . '.git')) {
+            return null;
+        }
+
+        $remoteGuard = $this->guard_remote_configuration($settings);
+        if ($remoteGuard !== null) {
+            return null;
+        }
+
+        return $this->sync_remote_branches($settings);
     }
 
     private function merge_into_active_branch(array $settings, string $sourceBranch): array
@@ -992,7 +1028,7 @@ final class WordPress_Git_Connector
             return $this->failure(__('Switch to a different branch before deleting the active branch.', 'wordpress-git-connector'));
         }
 
-        $existsResult = $this->run_git('show-ref --verify --quiet refs/heads/' . escapeshellarg($branchName), $settings);
+        $existsResult = $this->run_git('show-ref --verify --quiet ' . escapeshellarg('refs/heads/' . $branchName), $settings);
         if (empty($existsResult['success'])) {
             return $this->failure(__('The local branch does not exist.', 'wordpress-git-connector'), $branchName);
         }
