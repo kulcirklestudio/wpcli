@@ -1,0 +1,20 @@
+.ri-3b4e5958-wrapper {
+    display: block;
+    line-height: 0;
+}
+
+.ri-3b4e5958-wrapper a {
+    display: inline-block;
+    line-height: 0;
+}
+
+.ri-3b4e5958-picture {
+    display: block;
+    line-height: 0;
+}
+
+.ri-3b4e5958-picture img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
